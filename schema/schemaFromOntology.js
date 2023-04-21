@@ -2,7 +2,6 @@ const DatabaseInterface = require("./database/database");
 let database = new DatabaseInterface();
 const logger = require("../config/winston");
 var graphql = require("graphql");
-var request = require("request");
 
 //map of GraphQLObjectTypes and GraphQLInputObjectTypes
 
@@ -50,20 +49,18 @@ async function createClassList(ontology /*example file*/) {
     logger.info("Schema generated from file");
   } else if (ontology.url) {
     //read from
-    const doRequest = new Promise((resolve, reject) => request.get({ url: ontology.url }, function (error, response) {
-      if (error) {
-        reject(error);
-      }
-      resolve(response);
-    }));
-    const response = await doRequest;
-    await database.readFromString(response.body);
+    const response = await fetch(ontology.url);
+    if (!response.ok) {
+      throw Error("Failed to fetch ontology: " + response.status);
+    }
+    const responseText = await response.text();
+    await database.readFromString(responseText);
     logger.info("Schema generated from url");
   } else {
-    try{
+    try {
       await database.readFromString(ontology);
       logger.info("Schema generated from string");
-    } catch (error){
+    } catch (error) {
       throw Error("Wrong ontology format");
     }
   }
@@ -238,7 +235,7 @@ function filterGetFields(object) {
           fields[fieldName].type = graphQLScalarTypes[fieldType]
         }
       } else {
-        if (object.fields[fieldName].isList) { 
+        if (object.fields[fieldName].isList) {
           fields[fieldName].type = graphql.GraphQLList(graphql.GraphQLID)
         } else {
           fields[fieldName].type = graphql.GraphQLID
@@ -299,9 +296,9 @@ function createQueryType(classList, filterClassList, classesURIs, propertiesURIs
 
   //default data source
   let defaultSourceValue;
-  if (Array.isArray(defaultDataSource)){
+  if (Array.isArray(defaultDataSource)) {
     defaultSourceValue = defaultDataSource.map(d => dataSourceEnum.getValue(d).value);
-  } else{
+  } else {
     defaultSourceValue = defaultDataSource;
   }
 
@@ -316,8 +313,13 @@ function createQueryType(classList, filterClassList, classesURIs, propertiesURIs
       description: String(classList[className].description),
       fields: filterGetFields(filterClassList["Filter" + className])
     });
-    queryType.fields[className] = { type: graphql.GraphQLList(gqlObjects[className]), description: "Get objects of type: " + className, args: { "page": { type: graphql.GraphQLInt, description: "The number of results page to be returned by the query. A page consists of 10 results. If no page argument is provided all matching results are returned." }, "inferred": { type: graphql.GraphQLBoolean, defaultValue: false, description: "Include indirect instances of this type" }, "filter": { type: gqlObjects["Filter" + className], description: "Filters the selected results based on specified field values"}, "source": { type: graphql.GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue,
-    } } };
+    queryType.fields[className] = {
+      type: graphql.GraphQLList(gqlObjects[className]), description: "Get objects of type: " + className, args: {
+        "page": { type: graphql.GraphQLInt, description: "The number of results page to be returned by the query. A page consists of 10 results. If no page argument is provided all matching results are returned." }, "inferred": { type: graphql.GraphQLBoolean, defaultValue: false, description: "Include indirect instances of this type" }, "filter": { type: gqlObjects["Filter" + className], description: "Filters the selected results based on specified field values" }, "source": {
+          type: graphql.GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue,
+        }
+      }
+    };
   }
   queryType = new graphql.GraphQLObjectType(queryType);
   return queryType;
@@ -359,9 +361,9 @@ function getFieldsMutation(object) {
 
 function createMutationType(classList, inputClassList) {
   let defaultSourceValue;
-  if (Array.isArray(defaultDataSource)){
+  if (Array.isArray(defaultDataSource)) {
     defaultSourceValue = (defaultDataSource.map(d => dataSourceEnum.getValue(d).value));
-  } else{
+  } else {
     defaultSourceValue = defaultDataSource;
   }
 
@@ -396,13 +398,13 @@ function createMutationType(classList, inputClassList) {
 function listOfDataSourcesFromConfigObject(configObject) {
   let dataSources = Object.keys(configObject.dataSources).filter(function (x) { return x != "default"; });
 
-  if (Array.isArray(configObject.dataSources.default)){
-    for (let i in configObject.dataSources.default){
+  if (Array.isArray(configObject.dataSources.default)) {
+    for (let i in configObject.dataSources.default) {
       if (!(configObject.dataSources.default) || !(dataSources.indexOf(configObject.dataSources.default[i]) >= 0)) {
         throw Error("invalid default datasource!");
       }
     }
-  }else{
+  } else {
     if (!(configObject.dataSources.default) || !(dataSources.indexOf(configObject.dataSources.default) >= 0)) {
       throw Error("invalid default datasource!");
     }
@@ -423,10 +425,10 @@ function listOfDataSourcesFromConfigObject(configObject) {
   defaultDataSource = (configObject.dataSources.default);
 
   let dataSourcesDescriptions = {};
-  for (let d of dataSources){
+  for (let d of dataSources) {
     dataSourcesDescriptions[d] = configObject.dataSources[d].description;
   }
-  return {dataSources: dataSources, dataSourcesDescriptions: dataSourcesDescriptions};
+  return { dataSources: dataSources, dataSourcesDescriptions: dataSourcesDescriptions };
 }
 
 /**

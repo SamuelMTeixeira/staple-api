@@ -1,4 +1,4 @@
-const { buildSchemaFromTypeDefinitions } = require("graphql-tools");
+const { makeExecutableSchema } = require("@graphql-tools/schema");
 let schemaMapping = undefined;
 const logger = require("../config/winston");
 
@@ -113,7 +113,7 @@ const handleObjectType = (newNode, newNodeData, schema, schemaTypeName, listOfUn
 // -------------------------------------------------- RENDER SCHEMA + SCHEMA-MAPPING TREE
 const createTree = (schemaMappingArg, schemaString) => {
     schemaMapping = schemaMappingArg;
-    const schema = buildSchemaFromTypeDefinitions(schemaString);
+    const schema = makeExecutableSchema(schemaString);
     let treeFromSchema = {};
 
     const systemTypes = [

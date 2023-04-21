@@ -1,4 +1,4 @@
-const { buildSchemaFromTypeDefinitions } = require("graphql-tools");
+const { makeExecutableSchema } = require("@graphql-tools/schema");
 let schemaMapping = undefined;
 const logger = require("../../config/winston");
 const classMutations = require("./mutations/classMutations");
@@ -8,16 +8,16 @@ const deleteMutation = require("./mutations/deleteMutation");
 const createMutationResolvers = (database, tree, Warnings, schemaMappingArg, schemaString) => {
     logger.info("createMutationResolvers called");
     schemaMapping = schemaMappingArg;
-    const schema = buildSchemaFromTypeDefinitions(schemaString);
+    const schema = makeExecutableSchema(schemaString);
 
     let newResolverBody = {};
     const mutation = schema.getTypeMap()["Mutation"].astNode;
     for (let field of mutation.fields) {
-        if(field.name.value === "DELETE"){
+        if (field.name.value === "DELETE") {
             newResolverBody[field.name.value] = deleteMutation(database);
         }
-        else{
-            newResolverBody[field.name.value] = classMutations(database, schemaMapping, tree, field, mutation, field );
+        else {
+            newResolverBody[field.name.value] = classMutations(database, schemaMapping, tree, field, mutation, field);
         }
     }
     return newResolverBody;

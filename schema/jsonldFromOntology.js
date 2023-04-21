@@ -1,7 +1,5 @@
 const DatabaseInterface = require("./database/database");
 let database = new DatabaseInterface();
-// var fs = require("fs");
-var request = require("request");
 
 function processTypes(classes, data, enums, schema_spec) {
     for (var cla in classes) {
@@ -149,26 +147,27 @@ async function process(ontology) {
     database = new DatabaseInterface();
     if (ontology.file) {
         await database.readFromFile(ontology.file);
-      } else if (ontology.url) {
-        //read from
-        const doRequest = new Promise((resolve, reject) => request.get({ url: ontology.url }, function (error, response) {
-          if (error) {
-            reject(error);
-          }
-          resolve(response);
-        }));
-        const response = await doRequest;
-        await database.readFromString(response.body);
-      } else {
-        try{
-          await database.readFromString(ontology);
-        } catch (error){
-          throw Error("Wrong ontology format");
+    } else if (ontology.url) {
+        try {
+            const response = await fetch(ontology.url);
+            if (!response.ok) {
+                throw new Error("Error fetching ontology");
+            }
+            const ontologyString = await response.text();
+            await database.readFromString(ontologyString);
+        } catch (error) {
+            throw new Error(`Error fetching ontology: ${error.message}`);
         }
-      }
+    } else {
+        try {
+            await database.readFromString(ontology);
+        } catch (error) {
+            throw new Error("Wrong ontology format");
+        }
+    }
     let schema_spec = {
-        "classes": {},
-        "properties": {}
+        classes: {},
+        properties: {}
     };
 
     var clas = database.getInstances("http://www.w3.org/2000/01/rdf-schema#Class");
