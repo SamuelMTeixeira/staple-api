@@ -3,6 +3,17 @@ let database = new DatabaseInterface();
 const logger = require("../config/winston");
 var graphql = require("graphql");
 
+const {
+  GraphQLBoolean,
+  GraphQLInt,
+  GraphQLInputObjectType,
+  GraphQLNonNull,
+  GraphQLList,
+  GraphQLObjectType,
+  GraphQLID,
+  GraphQLString
+} = require('graphql');
+
 //map of GraphQLObjectTypes and GraphQLInputObjectTypes
 
 var gqlObjects = {};
@@ -189,8 +200,21 @@ async function createClassList(ontology /*example file*/) {
 function getFieldsQuery(object) {
   return () => {
     let fields = {
-      "_id": { type: graphql.GraphQLNonNull(graphql.GraphQLID), description: "The unique identifier of the object" },
-      "_type": { type: graphql.GraphQLList(graphql.GraphQLString), description: "Types of the object", args: { "inferred": { type: graphql.GraphQLBoolean, description: "Include inferred types for this object", defaultValue: false } } }
+      "_id": {
+        type: new GraphQLNonNull(GraphQLID),
+        description: "The unique identifier of the object"
+      },
+      "_type": {
+        type: new GraphQLList(GraphQLString),
+        description: "Types of the object",
+        args: {
+          "inferred": {
+            type: GraphQLBoolean,
+            description: "Include inferred types for this object",
+            defaultValue: false
+          }
+        }
+      }
     };
 
     for (let fieldName in object.fields) {
@@ -200,14 +224,14 @@ function getFieldsQuery(object) {
       let fieldType = object.fields[fieldName]["type"];
       if (graphQLScalarTypes[fieldType]) {
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(graphQLScalarTypes[fieldType])
+          fields[fieldName].type = new GraphQLList(graphQLScalarTypes[fieldType])
         } else {
           fields[fieldName].type = graphQLScalarTypes[fieldType]
         }
       } else {
-        fields[fieldName].args = { "source": { type: graphql.GraphQLList(dataSourceEnum) } }
+        fields[fieldName].args = { "source": { type: new GraphQLList(dataSourceEnum) } }
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(gqlObjects[fieldType])
+          fields[fieldName].type = new GraphQLList(gqlObjects[fieldType])
         } else {
           fields[fieldName].type = gqlObjects[fieldType]
         }
@@ -220,7 +244,10 @@ function getFieldsQuery(object) {
 function filterGetFields(object) {
   return () => {
     let fields = {
-      "_id": { type: graphql.GraphQLList(graphql.GraphQLID), description: "The unique identifier of the object" },
+      "_id": {
+        type: new GraphQLList(graphql.GraphQLID),
+        description: "The unique identifier of the object"
+      },
     };
 
     for (let fieldName in object.fields) {
@@ -230,13 +257,13 @@ function filterGetFields(object) {
       let fieldType = object.fields[fieldName]["type"];
       if (graphQLScalarTypes[fieldType]) {
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(graphQLScalarTypes[fieldType])
+          fields[fieldName].type = new GraphQLList(graphQLScalarTypes[fieldType])
         } else {
           fields[fieldName].type = graphQLScalarTypes[fieldType]
         }
       } else {
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(graphql.GraphQLID)
+          fields[fieldName].type = new GraphQLList(graphql.GraphQLID)
         } else {
           fields[fieldName].type = graphql.GraphQLID
         }
@@ -302,21 +329,21 @@ function createQueryType(classList, filterClassList, classesURIs, propertiesURIs
     defaultSourceValue = defaultDataSource;
   }
 
-  for (var className in classList) {
-    gqlObjects[className] = new graphql.GraphQLObjectType({
+  for (const className in classList) {
+    gqlObjects[className] = new GraphQLObjectType({
       name: className,
       description: String(classList[className].description),
       fields: getFieldsQuery(classList[className])
     });
-    gqlObjects["Filter" + className] = new graphql.GraphQLInputObjectType({
+    gqlObjects["Filter" + className] = new GraphQLInputObjectType({
       name: "Filter" + className,
       description: String(classList[className].description),
       fields: filterGetFields(filterClassList["Filter" + className])
     });
     queryType.fields[className] = {
-      type: graphql.GraphQLList(gqlObjects[className]), description: "Get objects of type: " + className, args: {
+      type: new GraphQLList(gqlObjects[className]), description: "Get objects of type: " + className, args: {
         "page": { type: graphql.GraphQLInt, description: "The number of results page to be returned by the query. A page consists of 10 results. If no page argument is provided all matching results are returned." }, "inferred": { type: graphql.GraphQLBoolean, defaultValue: false, description: "Include indirect instances of this type" }, "filter": { type: gqlObjects["Filter" + className], description: "Filters the selected results based on specified field values" }, "source": {
-          type: graphql.GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue,
+          type: new GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue,
         }
       }
     };
@@ -328,7 +355,10 @@ function createQueryType(classList, filterClassList, classesURIs, propertiesURIs
 function getFieldsMutation(object) {
   return () => {
     let fields = {
-      "_id": { type: graphql.GraphQLNonNull(graphql.GraphQLID), description: "The unique identifier of the object" },
+      "_id": {
+        type: new GraphQLNonNull(GraphQLID),
+        description: "The unique identifier of the object"
+      },
     };
     for (let fieldName in object.fields) {
       fields[fieldName] = {
@@ -337,13 +367,13 @@ function getFieldsMutation(object) {
       let fieldType = object.fields[fieldName]["type"];
       if (graphQLScalarTypes[fieldType]) {
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(graphQLScalarTypes[fieldType])
+          fields[fieldName].type = new GraphQLList(graphQLScalarTypes[fieldType])
         } else {
           fields[fieldName].type = graphQLScalarTypes[fieldType]
         }
       } else {
         if (object.fields[fieldName].isList) {
-          fields[fieldName].type = graphql.GraphQLList(graphql.GraphQLID)
+          fields[fieldName].type = new GraphQLList(graphql.GraphQLID)
         } else {
           fields[fieldName].type = graphql.GraphQLID
         }
@@ -376,8 +406,8 @@ function createMutationType(classList, inputClassList) {
         type: graphql.GraphQLBoolean,
         description: "Delete an object",
         args: {
-          "id": { type: graphql.GraphQLList(graphql.GraphQLNonNull(graphql.GraphQLID)), description: "An id of the object to be deleted" },
-          "source": { type: graphql.GraphQLList(dataSourceEnum), description: "Available data sources", defaultValue: defaultSourceValue }
+          "id": { type: new GraphQLList(new GraphQLNonNull(graphql.GraphQLID)), description: "An id of the object to be deleted" },
+          "source": { type: new GraphQLList(dataSourceEnum), description: "Available data sources", defaultValue: defaultSourceValue }
         }
       },
     }
@@ -389,7 +419,7 @@ function createMutationType(classList, inputClassList) {
       description: String(classList[className].description),
       fields: getFieldsMutation(inputClassList["Input" + className])
     });
-    mutationType.fields[className] = { type: graphql.GraphQLBoolean, description: "Perform mutation over an object of type: Input" + className, args: { input: { type: graphql.GraphQLNonNull(gqlObjects["Input" + className]), description: "The input object of the mutation" }, type: { type: inputEnum, defaultValue: 0, description: "The type of the mutation to be applied" }, "source": { type: graphql.GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue } } };
+    mutationType.fields[className] = { type: GraphQLBoolean, description: "Perform mutation over an object of type: Input" + className, args: { input: { type: new GraphQLNonNull(gqlObjects["Input" + className]), description: "The input object of the mutation" }, type: { type: inputEnum, defaultValue: 0, description: "The type of the mutation to be applied" }, "source": { type: new GraphQLList(dataSourceEnum), description: "Selected data sources", defaultValue: defaultSourceValue } } };
   }
   mutationType = new graphql.GraphQLObjectType(mutationType);
   return mutationType;

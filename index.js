@@ -45,8 +45,7 @@ async function init(ontology, configObject) {
         resolvers: schemaObj.rootResolver,
     });
 
-    schemaObj.graphql = async (query) =>
-        graphql(schemaObj.schema, query);
+    schemaObj.graphql = async (query) => graphql(schemaObj.schema, query);
 
     return schemaObj;
 }
