@@ -5,7 +5,6 @@ var graphql = require("graphql");
 
 const {
   GraphQLBoolean,
-  GraphQLInt,
   GraphQLInputObjectType,
   GraphQLNonNull,
   GraphQLList,
@@ -297,7 +296,7 @@ function createQueryType(classList, filterClassList, classesURIs, propertiesURIs
     }
   }
 
-  contextType = new graphql.GraphQLObjectType(contextType);
+  contextType = new GraphQLObjectType(contextType);
 
   // datasources enum
 

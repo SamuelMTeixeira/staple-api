@@ -8,7 +8,7 @@ const deleteMutation = require("./mutations/deleteMutation");
 const createMutationResolvers = (database, tree, Warnings, schemaMappingArg, schemaString) => {
     logger.info("createMutationResolvers called");
     schemaMapping = schemaMappingArg;
-    const schema = makeExecutableSchema(schemaString);
+    const schema = makeExecutableSchema({ typeDefs: schemaString });
 
     let newResolverBody = {};
     const mutation = schema.getTypeMap()["Mutation"].astNode;

@@ -2,7 +2,6 @@ const { makeExecutableSchema } = require("@graphql-tools/schema");
 let schemaMapping = undefined;
 const logger = require("../config/winston");
 
-
 const getUris = (object, name, listOfUnions) => {
     let uri = schemaMapping["@context"][object.name.value]; // basic type
     if (uri === undefined) { // defined type
@@ -10,7 +9,7 @@ const getUris = (object, name, listOfUnions) => {
     }
     if (uri === undefined) { // union
         let typesOfNode = listOfUnions.filter((x) => {
-            let tempNode = object.type; 
+            let tempNode = object.type;
             return x.name.value === tempNode.name.value;
         })[0]; // get types of union
 
@@ -55,11 +54,11 @@ const handleObjectType = (newNode, newNodeData, schema, schemaTypeName, listOfUn
 
     let id = schemaMapping["@context"][schema.getTypeMap()[schemaTypeName]["name"]];
 
-    if(id === undefined && schemaTypeName !== "_CONTEXT" && schemaTypeName !== "_OBJECT"){
+    if (id === undefined && schemaTypeName !== "_CONTEXT" && schemaTypeName !== "_OBJECT") {
         newNode["uri"] = schemaTypeName;
         newNode["type"] = "Reverse";
     }
-    else{
+    else {
         newNode["uri"] = id;
 
         let tempNewNodeType = schemaMapping["@graphMap"][id];
@@ -77,11 +76,11 @@ const handleObjectType = (newNode, newNodeData, schema, schemaTypeName, listOfUn
         newNodeData[object.name.value] = {};
         let copyOfNewNode = newNodeData[object.name.value];
         let prop = object["type"];
-        
- 
+
+
         while (prop !== undefined) {
             copyOfNewNode["ListType"] = false;
-            if(prop["kind"] === "ListType" && prop["type"] !== undefined){
+            if (prop["kind"] === "ListType" && prop["type"] !== undefined) {
                 prop = prop["type"];
                 copyOfNewNode["ListType"] = true;
             }
@@ -90,12 +89,12 @@ const handleObjectType = (newNode, newNodeData, schema, schemaTypeName, listOfUn
                 prop = prop["type"];
             }
             // this is the root where we get the value
-            if (prop["kind"] === "NamedType") { 
+            if (prop["kind"] === "NamedType") {
                 copyOfNewNode["name"] = prop["name"]["value"];
                 copyOfNewNode["uri"] = getUris(object, copyOfNewNode["name"], listOfUnions);
 
             }
-            else { 
+            else {
                 copyOfNewNode["kind"] = prop["kind"];
                 copyOfNewNode["data"] = {};
                 logger.warn("Unexpected node in schema:");
@@ -113,7 +112,7 @@ const handleObjectType = (newNode, newNodeData, schema, schemaTypeName, listOfUn
 // -------------------------------------------------- RENDER SCHEMA + SCHEMA-MAPPING TREE
 const createTree = (schemaMappingArg, schemaString) => {
     schemaMapping = schemaMappingArg;
-    const schema = makeExecutableSchema(schemaString);
+    const schema = makeExecutableSchema({ typeDefs: schemaString });
     let treeFromSchema = {};
 
     const systemTypes = [
